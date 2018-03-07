@@ -1,2 +1,2 @@
 # JMGeneric.js
-Library to create interfaces (events handling etc) easier for me.  
+Library to help create interfaces (events handling etc).  

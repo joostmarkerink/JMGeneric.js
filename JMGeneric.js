@@ -18,6 +18,24 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+JMControls={
+  touch:typeof TouchEvent ==='undefined'?false:true,
+  mouse:typeof MouseEvent ==='undefined'?false:true
+};
+
+window.addEventListener('load',function(){
+  if(JMControls.touch){
+    document.querySelector('body').classList.add('touch');
+  }else
+    document.querySelector('body').classList.add('no-touch');
+  if(JMControls.mouse)
+    document.querySelector('body').classList.add('mouse');
+  else
+    document.querySelector('body').classList.add('no-mouse');
+
+},false);
+
+
 Object.prototype.isElementObject=function(){ return false; };
 
 function JMElementObject(tag,classes){
@@ -43,14 +61,20 @@ JMElementObject.prototype.isElementObject=function(){ return true; };
 
 
 function JMLeftClick(e){
-  if(this.elementObject && !this.elementObject.rightMouseButtonIsDown && this.elementObject.click) this.elementObject.click(e,false);
+  if(this.elementObject && !this.elementObject.rightMouseButtonIsDown && this.elementObject.click){
+    e.preventDefault();
+    this.elementObject.click(false);
+  }
 }
 function JMRightClick(e){
   console.log('up?',e.buttons);
   if(e.buttons==0){
     this.elementObject.rightMouseButtonIsDown=false;
     this.removeEventListener('mouseup',JMRightClick,false);
-    if(this.elementObject && this.elementObject.click) this.elementObject.click(e,true);
+    if(this.elementObject && this.elementObject.click){
+      e.preventDefault();
+      this.elementObject.click(true);
+    }
   }
 
 }

@@ -67,7 +67,6 @@ function JMLeftClick(e){
   }
 }
 function JMRightClick(e){
-  console.log('up?',e.buttons);
   if(e.buttons==0){
     this.elementObject.rightMouseButtonIsDown=false;
     this.removeEventListener('mouseup',JMRightClick,false);
@@ -76,7 +75,6 @@ function JMRightClick(e){
       this.elementObject.click(true);
     }
   }
-
 }
 
 function JMRightMouseDown(e){
@@ -144,6 +142,7 @@ var JMMouseTarget=null;
 function JMMouseDown(e){
   JMMouseTarget=this.elementObject;
   JMMouseTarget.mouse={x:e.clientX,y:e.clientY};
+  JMMouseTarget.mouseDidMove=false;
   window.addEventListener('mousemove',JMMouseMove,false);
   window.addEventListener('mouseup',JMMouseUp,false);
   if(JMMouseTarget.mouseDown){
@@ -155,6 +154,8 @@ function JMMouseDown(e){
 
 function JMMouseMove(e){
   if(JMMouseTarget && JMMouseTarget.mouseMove){
+    JMMouseTarget.mouseDidMove=true;
+
     e.preventDefault();
     var x=e.clientX-JMMouseTarget.mouse.x;
     var y=e.clientY-JMMouseTarget.mouse.y;
@@ -173,6 +174,7 @@ function JMMouseUp(e){
     if(JMMouseTarget.mouseUp) JMMouseTarget.mouseUp(x,y);
     window.removeEventListener('mousemove',JMMouseMove,false);
     window.removeEventListener('mouseup',JMMouseUp,false);
+    JMMouseTarget.mouseDidMove=false;
     JMMouseTarget=null;
   }
 }

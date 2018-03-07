@@ -1,4 +1,4 @@
-/* 
+/*
 Copyright 2018 Joost Markerink
 
 Permission is hereby granted, free of charge,
@@ -18,53 +18,81 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+Object.prototype.isElementObject=function(){ return false; };
+
+function JMElementObject(tag,classes){
+  JMElementObject.allObjects.push(this);
+  if(tag && Array.isArray(tag)){
+    classes=tag; tag='div';
+  }else{
+    if(!classes) classes=[];
+    if(!tag) tag='div';
+  }
+  this.element=JMCreateElement(tag,classes);
+  this.element.elementObject=this;
+}
+
+JMElementObject.defineClass=function(func){
+  func.prototype = Object.create(JMElementObject.prototype);
+  func.prototype.constructor = func;
+};
+
+JMElementObject.allObjects=[];
+
+JMElementObject.prototype.isElementObject=function(){ return true; };
+
+
 function JMLeftClick(e){
-  if(this.object && !this.object.rightMouseButtonIsDown && this.object.click) this.object.click(e,false);
+  if(this.elementObject && !this.elementObject.rightMouseButtonIsDown && this.elementObject.click) this.elementObject.click(e,false);
 }
 function JMRightClick(e){
   console.log('up?',e.buttons);
   if(e.buttons==0){
-    this.object.rightMouseButtonIsDown=false;
+    this.elementObject.rightMouseButtonIsDown=false;
     this.removeEventListener('mouseup',JMRightClick,false);
-    if(this.object && this.object.click) this.object.click(e,true);
+    if(this.elementObject && this.elementObject.click) this.elementObject.click(e,true);
   }
 
 }
 
 function JMRightMouseDown(e){
-  if(this.object){
+  if(this.elementObject){
     e.preventDefault();
-    this.object.rightMouseButtonIsDown=true;
+    this.elementObject.rightMouseButtonIsDown=true;
     this.addEventListener('mouseup',JMRightClick,false);
   }
 }
 
-function JMAddLeftClick(el){ el.addEventListener('click',JMLeftClick,false); }
-function JMAddRightClick(el){ el.addEventListener('contextmenu',JMRightMouseDown,false); }
+function JMAddLeftClick(obj){
+  obj.element.addEventListener('click',JMLeftClick,false);
+}
+function JMAddRightClick(obj){
+  obj.element.addEventListener('contextmenu',JMRightMouseDown,false);
+}
 
 function JMTouchStart(e){
-  if(this.object && !this.object.touching && e.changedTouches.length==1 && this.object.touchStart){
+  if(this.elementObject && !this.elementObject.touching && e.changedTouches.length==1 && this.elementObject.touchStart){
     e.preventDefault();
 
-    this.object.touching=true;
-    this.object.finger={touch:e.changedTouches[0].identifier,x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};
+    this.elementObject.touching=true;
+    this.elementObject.finger={touch:e.changedTouches[0].identifier,x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};
     this.addEventListener('touchmove',JMTouchMove,false);
     this.addEventListener('touchend',JMTouchEnd,false);
     this.addEventListener('touchcancel',JMTouchEnd,false);
-    this.object.touchStart(e);
+    this.elementObject.touchStart(e);
 
   }
 }
 
 function JMTouchMove(e){
-  if(this.object && this.object.touching && this.object.touchMove){
+  if(this.elementObject && this.elementObject.touching && this.elementObject.touchMove){
 
     for(var i=0;i<e.changedTouches.length;i++){
-      if(e.changedTouches[i].identifier==this.object.finger.touch){
+      if(e.changedTouches[i].identifier==this.elementObject.finger.touch){
         e.preventDefault();
-        var x=e.changedTouches[0].clientX-this.object.finger.x;
-        var y=e.changedTouches[0].clientY-this.object.finger.y;
-        this.object.touchMove(x,y);
+        var x=e.changedTouches[0].clientX-this.elementObject.finger.x;
+        var y=e.changedTouches[0].clientY-this.elementObject.finger.y;
+        this.elementObject.touchMove(x,y);
         break;
       }
     }
@@ -72,18 +100,16 @@ function JMTouchMove(e){
 }
 
 function JMTouchEnd(e){
-  if(this.object && this.object.touching){
+  if(this.elementObject && this.elementObject.touching){
     for(var i=0;i<e.changedTouches.length;i++){
-      if(e.changedTouches[i].identifier==this.object.finger.touch){
+      if(e.changedTouches[i].identifier==this.elementObject.finger.touch){
         e.preventDefault();
-        this.object.touching=false;
+        this.elementObject.touching=false;
         this.removeEventListener('touchmove',JMTouchMove,false);
         this.removeEventListener('touchend',JMTouchEnd,false);
         this.removeEventListener('touchcancel',JMTouchEnd,false);
         this.identifier=0;
-        if(this.object.touchEnd){
-          this.object.touchEnd(e);
-        }
+        if(this.elementObject.touchEnd) this.elementObject.touchEnd(e);
         break;
       }
     }
@@ -92,7 +118,7 @@ function JMTouchEnd(e){
 var JMMouseTarget=null;
 
 function JMMouseDown(e){
-  JMMouseTarget=this.object;
+  JMMouseTarget=this.elementObject;
   JMMouseTarget.mouse={x:e.clientX,y:e.clientY};
   window.addEventListener('mousemove',JMMouseMove,false);
   window.addEventListener('mouseup',JMMouseUp,false);
@@ -128,9 +154,9 @@ function JMMouseUp(e){
 }
 
 
-function JMAddMouse(el){ el.addEventListener('mousedown',JMMouseDown,false); }
+function JMAddMouse(obj){ obj.element.addEventListener('mousedown',JMMouseDown,false); }
 
-function JMAddTouch(el){ el.addEventListener('touchstart',JMTouchStart,false); }
+function JMAddTouch(obj){ obj.element.addEventListener('touchstart',JMTouchStart,false); }
 
 
 function JMCreateElement(tag,classes,parent){

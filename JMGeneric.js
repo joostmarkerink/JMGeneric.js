@@ -61,18 +61,18 @@ JMElementObject.prototype.isElementObject=function(){ return true; };
 
 
 function JMLeftClick(e){
-  if(this.elementObject && !this.elementObject.rightMouseButtonIsDown && this.elementObject.click){
+  if(this.elementObject && !this.elementObject.rightMouseButtonIsDown && this.elementObject.click ){
     e.preventDefault();
-    this.elementObject.click(false);
+    this.elementObject.click(e);
   }
 }
 function JMRightClick(e){
-  if(e.buttons==0){
+  if(e.button==2){
     this.elementObject.rightMouseButtonIsDown=false;
     this.removeEventListener('mouseup',JMRightClick,false);
     if(this.elementObject && this.elementObject.click){
       e.preventDefault();
-      this.elementObject.click(true);
+      this.elementObject.click(e);
     }
   }
 }
@@ -91,6 +91,7 @@ function JMAddLeftClick(obj){
 function JMAddRightClick(obj){
   obj.element.addEventListener('contextmenu',JMRightMouseDown,false);
 }
+
 
 function JMTouchStart(e){
   if(this.elementObject && !this.elementObject.touching && e.changedTouches.length==1 && this.elementObject.touchStart){
@@ -138,8 +139,10 @@ function JMTouchEnd(e){
   }
 }
 var JMMouseTarget=null;
+var JMMouseTimer=0;
 
 function JMMouseDown(e){
+  if(e.button!=0){ return; }
   JMMouseTarget=this.elementObject;
   JMMouseTarget.mouse={x:e.clientX,y:e.clientY};
   JMMouseTarget.mouseDidMove=false;
@@ -153,7 +156,7 @@ function JMMouseDown(e){
 
 
 function JMMouseMove(e){
-  if(JMMouseTarget && JMMouseTarget.mouseMove){
+  if(JMMouseTarget && JMMouseTarget.mouseMove && e.button==0){
     JMMouseTarget.mouseDidMove=true;
 
     e.preventDefault();
@@ -166,7 +169,8 @@ function JMMouseMove(e){
 
 
 function JMMouseUp(e){
-  if(JMMouseTarget){
+  if(JMMouseTarget && e.button==0){
+
     e.preventDefault();
     var x=e.clientX-JMMouseTarget.mouse.x;
     var y=e.clientY-JMMouseTarget.mouse.y;
@@ -179,6 +183,11 @@ function JMMouseUp(e){
   }
 }
 
+
+
+function JMAddLongPress(obj){
+  /* TODO */
+}
 
 function JMAddMouse(obj){ obj.element.addEventListener('mousedown',JMMouseDown,false); }
 
@@ -200,17 +209,20 @@ var JMWindow_resize_targets=[];
 
 function JMWindow_didResize(){
  JMWindow_resize_timer=0;
- document.querySelector('body').classList.add('resizing');
  for(var i=0;i<JMWindow_resize_targets.length;i++){
    if(JMWindow_resize_targets[i] && JMWindow_resize_targets[i].resized)
-    JMWindow_resize_targets[i].resized();
+       JMWindow_resize_targets[i].resized();
  }
  setTimeout(function(){document.querySelector('body').classList.remove('resizing');},200);
 }
 
 
 function JMWindow_resize(e){
-  clearTimeout(JMWindow_resize_timer);
+  if(JMWindow_resize_timer==0){
+    document.querySelector('body').classList.add('resizing');
+  }else{
+    clearTimeout(JMWindow_resize_timer);
+  }
   JMWindow_resize_timer=setTimeout(JMWindow_didResize,100);
 }
 
@@ -219,7 +231,7 @@ function JMAddWindowResized(ob){
   JMWindow_resize_targets.push(ob);
   window.removeEventListener('resize',JMWindow_resize);
   window.addEventListener('resize',JMWindow_resize);
-  JMWindow_didResize();
+  setTimeout(JMWindow_didResize,50);
 }
 
 var JMGlobal={element:null,resize:function(){}};
